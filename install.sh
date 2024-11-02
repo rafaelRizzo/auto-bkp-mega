@@ -36,47 +36,6 @@ install_fedora() {
     rm -f megacmd.rpm
 }
 
-# Função para adicionar várias pastas ao arquivo de configuração
-add_folders() {
-    read -rp "Digite os caminhos das pastas para backup, separados por espaço: " -a folder_paths
-
-    for folder in "${folder_paths[@]}"; do
-        if [[ -d $folder ]]; then
-            echo "$folder" >> "$CONFIG_FILE"
-            echo "Pasta adicionada: $folder"
-        else
-            echo "Pasta não encontrada: $folder"
-        fi
-    done
-}
-
-# Função para listar pastas configuradas para backup
-list_folders() {
-    if [[ -f $CONFIG_FILE ]]; then
-        echo "Pastas configuradas para backup:"
-        cat "$CONFIG_FILE"
-    else
-        echo "Nenhuma pasta configurada para backup ainda."
-    fi
-}
-
-# Função para fazer o upload das pastas para o MEGA
-backup_to_mega() {
-    if [[ ! -f $CONFIG_FILE ]]; then
-        echo "Nenhuma pasta configurada para backup. Adicione uma pasta primeiro."
-        exit 1
-    fi
-
-    while IFS= read -r folder; do
-        if [[ -d $folder ]]; then
-            echo "Fazendo upload da pasta: $folder"
-            megacmd put "$folder" /Root/
-        else
-            echo "Pasta não encontrada: $folder"
-        fi
-    done < "$CONFIG_FILE"
-}
-
 # Menu para selecionar o sistema operacional e versão
 echo "Selecione o sistema operacional:"
 echo "1) Ubuntu"
@@ -157,7 +116,7 @@ cat << 'EOF' > "$FILE_NAME"
 #!/bin/bash
 
 # Caminho para o arquivo de configuração das pastas e arquivos
-CONFIG_FILE="mega_items.conf"
+CONFIG_FILE="/home/rafa/auto-bkp-mega/mega_items.conf" # Altere conforme seu path!
 
 # Função para adicionar várias pastas ou arquivos ao arquivo de configuração
 add_items() {
