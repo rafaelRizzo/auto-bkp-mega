@@ -116,7 +116,7 @@ cat << 'EOF' > "$FILE_NAME"
 #!/bin/bash
 
 # Caminho para o arquivo de configuração das pastas e arquivos
-CONFIG_FILE="mega_items.conf"
+CONFIG_FILE="/home/rafa/auto-bkp-mega/mega_items.conf" # Altere conforme seu path!
 
 # Função para adicionar várias pastas ou arquivos ao arquivo de configuração
 add_items() {
