@@ -4,7 +4,6 @@ Este script em Bash automatiza o processo de backup de pastas e arquivos para o 
 
 O script é indicado para servidores locais e em nuvem com pelo menos acesso a rede externa, ou seja, precisa conseguir se comunicar com o servidor do MEGA para que possa enviar os arquivos.
 Pode ser instalado em servidores Ubuntu, Debian e derivados do Fedora mais recente.
-OBS: NÃO É COMPATÍVEL COM CENTOS!
 
 ## Descrição do Script
 
@@ -30,6 +29,10 @@ O script solicita a escolha do sistema operacional e versão. Dependendo da sele
 - **Ubuntu**: Suporte para versões de 18.04 até 24.10.
 - **Debian**: Suporte para versões 11 e 12.
 - **Fedora**: Suporte para versões 38, 39 e 40.
+
+OBS: PARA VERSÕES CENTOS7 PRECISA RODAR O SEGUINTE COMANDO PARA INSTALAÇÃO:
+
+`yum install dnf -y && wget https://mega.nz/linux/repo/CentOS_7/x86_64/megacmd-1.6.3-1.1.x86_64.rpm && dnf install megacmd-1.6.3-1.1.x86_64.rpm`
 
 ### 2. Logando no MEGA
 
@@ -77,6 +80,4 @@ mega-put diretório_ou_arquivo diretório_no_mega
 mega-get nome_do_arquivo_no_mega
 
 Você também consegue criar várias pastas "recursivamente" com a flag -c, exemplo: mega-put /backup/2024/11/05/arquivo.txt / -c
-
-
 
