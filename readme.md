@@ -66,4 +66,17 @@ Este script foi desenvolvido para facilitar backups periódicos e gerenciar iten
 
 **Importante**: A segurança das credenciais MEGA é responsabilidade do usuário, e é recomendável proteger o script e o arquivo de configuração com permissões restritas.
 
+### Informações adicionais
+Você pode criar seu próprio script com base na documentação do mega cmd no link: https://mega.io/pt-br/
+
+ou digitando `mega`
+Os comando básicos são:
+mega-login usuario_mega senha_mega
+mega-logout
+mega-put diretório_ou_arquivo diretório_no_mega
+mega-get nome_do_arquivo_no_mega
+
+Você também consegue criar várias pastas "recursivamente" com a flag -c, exemplo: mega-put /backup/2024/11/05/arquivo.txt / -c
+
+
 
