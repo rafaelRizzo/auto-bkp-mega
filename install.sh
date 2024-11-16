@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Restaura as configurações padrão do terminal, caso algo tenha sido corrompido
+stty sane
+
 # Solicita o usuário e a senha antes de continuar
 read -rp "Digite seu usuário MEGA: " mega_user
 read -srp "Digite sua senha MEGA: " mega_password
@@ -13,6 +16,38 @@ CONFIG_FILE="$DIR_PATH/mega_folders.conf"
 if [[ ! -f $CONFIG_FILE ]]; then
     touch "$CONFIG_FILE"
     echo "Arquivo de configuração $CONFIG_FILE criado."
+fi
+
+# Função para exibir o help
+help_menu() {
+    echo "Uso: ./install_mega.sh"
+    echo ""
+    echo "Este script automatiza a instalação do MEGAcmd, configura pastas/arquivos para backup"
+    echo "e cria um script para gerenciar backups na conta MEGA."
+    echo ""
+    echo "Passos principais:"
+    echo "  1. Instalação: Seleciona o sistema operacional e instala o MEGAcmd."
+    echo "  2. Login: Realiza o login automático no MEGA com as credenciais fornecidas."
+    echo "  3. Configuração: Cria um script de backup configurável para gerenciar arquivos e pastas."
+    echo ""
+    echo "Opções automáticas no script de backup:"
+    echo "  - Adicionar itens: Configura as pastas ou arquivos que serão enviados para o MEGA."
+    echo "  - Listar itens: Mostra as pastas ou arquivos já configurados para backup."
+    echo "  - Executar backup: Faz upload imediato dos itens configurados para sua conta MEGA."
+    echo ""
+    echo "Agendamento de backup com Crontab:"
+    echo "  - Para automatizar o backup, adicione o script de backup ao crontab."
+    echo "    Exemplo de entrada no crontab para execução diária às 2h da manhã:"
+    echo "    0 2 * * * /caminho/para/backup_script.sh -run >> /caminho/para/backup.log 2>&1"
+    echo ""
+    echo "Para exibir este menu de ajuda, execute o script com a opção --help:"
+    echo "  ./install_mega.sh --help"
+    exit 0
+}
+
+# Verifica se a opção --help foi passada
+if [[ $1 == "--help" ]]; then
+    help_menu
 fi
 
 # Função para instalar MEGAcmd para Ubuntu e Debian
@@ -36,12 +71,22 @@ install_fedora() {
     rm -f megacmd.rpm
 }
 
+# Função para instalar MEGAcmd no CentOS 7
+install_centos7() {
+    echo "Baixando e instalando MEGAcmd para CentOS 7..."
+    yum install dnf -y
+    wget https://mega.nz/linux/repo/CentOS_7/x86_64/megacmd-1.6.3-1.1.x86_64.rpm
+    dnf install -y megacmd-1.6.3-1.1.x86_64.rpm
+    rm -f megacmd-1.6.3-1.1.x86_64.rpm
+}
+
 # Menu para selecionar o sistema operacional e versão
 echo "Selecione o sistema operacional:"
 echo "1) Ubuntu"
 echo "2) Debian"
 echo "3) Fedora"
-echo "4) Pular instalação, já tenho o mega instalado"
+echo "4) CentOS 7"
+echo "5) Pular instalação, já tenho o mega instalado"
 read -rp "Opção: " os_choice
 
 if [[ $os_choice -eq 1 ]]; then
@@ -97,6 +142,9 @@ elif [[ $os_choice -eq 3 ]]; then
     esac
 
 elif [[ $os_choice -eq 4 ]]; then
+    install_centos7
+
+elif [[ $os_choice -eq 5 ]]; then
     echo "Ok! pulando instalação..."
 
 else
@@ -115,8 +163,41 @@ FILE_NAME="backup_script.sh"
 cat << 'EOF' > "$FILE_NAME"
 #!/bin/bash
 
-# Caminho para o arquivo de configuração das pastas e arquivos
-CONFIG_FILE="/home/rafa/auto-bkp-mega/mega_items.conf" # Altere conforme seu path!
+# Caminho padrão do arquivo de configuração
+DEFAULT_CONFIG_FILE="$(pwd)/mega_items.conf"
+
+# Função para exibir o uso do script
+usage() {
+    echo "Uso: $0 [--config-dir <diretório> | -run]"
+    echo ""
+    echo "  --config-dir <diretório>  Define o diretório para salvar o arquivo de configuração."
+    echo "  -run                      Executa o backup automaticamente."
+    exit 1
+}
+
+# Processa argumentos de linha de comando
+CONFIG_FILE="$DEFAULT_CONFIG_FILE"
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --config-dir)
+            shift
+            if [[ -z $1 ]]; then
+                echo "Erro: Nenhum diretório informado após --config-dir."
+                usage
+            fi
+            CONFIG_FILE="$1/mega_items.conf"
+            shift
+            ;;
+        -run)
+            backup_to_mega
+            exit 0
+            ;;
+        *)
+            echo "Erro: Opção desconhecida: $1"
+            usage
+            ;;
+    esac
+done
 
 # Função para adicionar várias pastas ou arquivos ao arquivo de configuração
 add_items() {
@@ -160,15 +241,10 @@ backup_to_mega() {
             echo "Item não encontrado: $item"
         fi
     done < "$CONFIG_FILE"
-}	
-
-# Verifica se o script foi chamado com a opção -run
-if [[ $1 == "-run" ]]; then
-    backup_to_mega
-    exit 0
-fi
+}
 
 # Menu para adicionar, listar itens ou iniciar o backup
+echo "Arquivo de configuração: $CONFIG_FILE"
 echo "Escolha uma opção:"
 echo "1) Adicionar itens (pastas ou arquivos) ao backup"
 echo "2) Listar itens configurados"
@@ -190,20 +266,13 @@ echo "$FILE_NAME criado com sucesso!"
 
 echo "Instalação e configurações finalizadas"
 
-echo "Usando o backup_script.sh:"
-echo "   - Com esse script, você pode adicionar, listar e executar o backup de pastas ou arquivos específicos."
-echo "   - Opções:"
-echo "       1) Adicionar itens ao backup: escolha essa opção para configurar pastas ou arquivos para backup, que serão salvos no arquivo 'mega_items.conf'."
-echo "       2) Listar itens: exibe todas as pastas ou arquivos configurados para backup."
-echo "       3) Executar backup: sincroniza imediatamente os itens configurados com a conta MEGA."
-echo ""
-echo "Automatizando o backup com Crontab:"
-echo "   - Para agendar o backup automaticamente, você pode adicionar o 'backup_script.sh' ao crontab:"
-echo "   - Execute 'crontab -e' para abrir o editor do crontab."
-echo "   - Adicione uma linha no formato desejado. Por exemplo, para rodar o backup diariamente às 2h da manhã:"
-echo ""
-echo "       0 2 * * * echo "Backup iniciado em: $(date '+\%Y-\%m-\%d \%H:\%M:\%S')" >> /home/rafa/auto-bkp-mega/backup.log && /home/rafa/auto-bkp-mega/backup_script.sh -run >> /home/rafa/auto-bkp-mega/backup.log 2>&1"
-echo ""
-echo "   - Essa linha agenda o script para rodar automaticamente no horário configurado."
+# Verifica se já foi executado antes
+STATE_FILE="$DIR_PATH/.installed"
 
-
+if [[ ! -f $STATE_FILE ]]; then
+    # Exibe o menu de ajuda na primeira execução
+    help_menu
+    touch "$STATE_FILE"
+else
+    echo "Configuração já realizada. Para ajuda, execute com --help."
+fi
